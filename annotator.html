@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CrackMark</title>
+  <link rel="stylesheet" href="/annotator.css">
+</head>
+<body>
+<div id="root">
+
+  <div id="s-import" class="screen active">
+    <div class="import-card">
+      <div class="import-logo">Crack<span>Mark</span></div>
+      <p class="import-desc">Select your source images and where to save the masks, then start annotating.</p>
+
+      <div class="imp-step" id="imp-src-step">
+        <div class="imp-step-header">
+          <div class="imp-num">1</div>
+          <div>
+            <div class="imp-step-title">Source Images</div>
+            <div class="imp-step-sub">Folder containing the road photographs</div>
+          </div>
+        </div>
+        <div class="imp-body">
+          <button class="btn btn-sm btn-outline" id="btn-pick-src">Browse&hellip;</button>
+          <span class="imp-status" id="src-status">No folder selected</span>
+        </div>
+      </div>
+      <input type="file" id="fi" webkitdirectory multiple hidden>
+
+      <div class="imp-step" id="imp-out-step">
+        <div class="imp-step-header">
+          <div class="imp-num">2</div>
+          <div>
+            <div class="imp-step-title">Save Masks To</div>
+            <div class="imp-step-sub">Output folder for the generated PNG masks</div>
+          </div>
+        </div>
+        <div class="imp-body">
+          <button class="btn btn-sm btn-outline" id="btn-pick-out">Browse&hellip;</button>
+          <span class="imp-status" id="out-status">No folder selected</span>
+        </div>
+      </div>
+
+      <p class="imp-err hidden" id="imp-err">No image files found in that folder.</p>
+      <button class="btn btn-accent btn-full" id="btn-start" disabled>
+        Start Annotating
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div id="s-loaded" class="screen">
+    <div class="chk-ring">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    </div>
+    <div id="ld-count" class="ld-count">0 images</div>
+    <div id="ld-folder" class="ld-folder"></div>
+  </div>
+
+  <div id="s-editor" class="screen">
+
+    <header id="hdr">
+      <div id="hdr-file" class="hdr-file" title="">—</div>
+      <div class="hdr-sep"></div>
+      <div id="hdr-prog" class="hdr-prog">0 / 0</div>
+      <div class="hdr-sep"></div>
+      <div id="ml-status" class="ml-chip">—</div>
+      <div class="hdr-control" title="AI detection threshold — lower = more detections">
+        <span class="ctrl-lbl">Sensitivity</span>
+        <input type="range" id="ml-sl" class="slider" min="10" max="50" value="30">
+        <span id="ml-sl-val" class="ctrl-val">30%</span>
+      </div>
+      <div class="hdr-sep"></div>
+      <button id="btn-rm-ai" class="btn-rm-ai" title="Clears all AI detections — draw the cracks manually">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+        </svg>
+        Remove AI Detections
+      </button>
+    </header>
+
+    <div id="ed-body">
+
+      <div id="lp" class="panel">
+        <div class="panel-label">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+          Original &mdash; draw here too
+        </div>
+        <div id="raw-cw" class="canvas-wrap">
+          <canvas id="raw-c"></canvas>
+          <canvas id="stroke-c"></canvas>
+        </div>
+      </div>
+
+      <div id="spl" class="splitter"></div>
+
+      <div id="rp" class="panel">
+        <div id="rp-tb">
+          <div class="tool-group">
+            <button class="tool-btn active-draw" id="btn-draw" title="Draw white cracks (D)">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+              </svg>
+              Draw
+            </button>
+            <button class="tool-btn" id="btn-erase" title="Erase lines (E)">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M20 20H7L3 16l12-12 5 5-5.5 5.5"/><path d="m6 17 3-3"/>
+              </svg>
+              Erase
+            </button>
+          </div>
+
+          <div class="tb-divider"></div>
+
+          <div class="hdr-control">
+            <span class="ctrl-lbl">Brush</span>
+            <input type="range" id="brush-sl" class="slider" min="2" max="60" value="10">
+            <input type="number" id="brush-num" class="brush-num-input" min="2" max="60" value="10">
+          </div>
+
+          <div class="tb-divider"></div>
+
+          <button class="btn btn-sm btn-ghost" id="btn-undo" disabled>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>
+            </svg>
+            Undo
+          </button>
+          <button class="btn btn-sm btn-ghost-danger" id="btn-clr">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M3 6h18"/><path d="M19 6 18 20a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+            </svg>
+            Reset Edits
+          </button>
+
+          <div class="tb-spacer"></div>
+          <span class="panel-label-inline">Crack Mask</span>
+        </div>
+
+        <div id="mask-cw" class="canvas-wrap">
+          <canvas id="mask-c"></canvas>
+        </div>
+      </div>
+
+    </div>
+
+    <footer id="ed-footer">
+      <span id="save-prog" class="save-prog"></span>
+      <button class="btn btn-ghost" id="btn-skip">Skip</button>
+      <button class="btn btn-accent" id="btn-save">
+        Save &amp; Next
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+        </svg>
+        <kbd class="inline-kbd">Enter</kbd>
+      </button>
+    </footer>
+
+  </div>
+
+  <div id="s-done" class="screen">
+    <div class="chk-ring done-ring">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    </div>
+    <div id="done-title" class="done-title">All done!</div>
+    <div id="done-sub" class="done-sub">0 masks saved</div>
+    <button class="btn btn-outline" id="btn-restart" style="margin-top:12px">Start Over</button>
+  </div>
+
+</div>
+
+<div id="bc"></div>
+
+<div id="kbd-wrap">
+  <div id="kbd-box" class="kbd-box">
+    <div class="kbd-title">Keyboard Shortcuts</div>
+    <div class="kr"><span>Draw mode</span><kbd>D</kbd></div>
+    <div class="kr"><span>Erase mode</span><kbd>E</kbd></div>
+    <div class="kr"><span>Undo last stroke</span><kbd>Z</kbd></div>
+    <div class="kr"><span>Reset all edits</span><kbd>Shift Z</kbd></div>
+    <div class="kr"><span>Brush smaller</span><kbd>[</kbd></div>
+    <div class="kr"><span>Brush larger</span><kbd>]</kbd></div>
+    <div class="kr"><span>Save &amp; Next</span><kbd>Enter</kbd></div>
+    <div class="kr"><span>Skip image</span><kbd>S</kbd></div>
+  </div>
+  <button id="kbd-toggle" class="kbd-toggle" title="Keyboard shortcuts">?</button>
+</div>
+
+<div id="toasts"></div>
+
+<script src="/annotator.js"></script>
+</body>
+</html>
