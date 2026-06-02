@@ -29,7 +29,7 @@ It also ships with an optional deep-learning backend: a U-Net that runs inferenc
 pip install flask opencv-python numpy scikit-image pillow
 ```
 
-**Deep-learning backend** (adds torch, torchvision, timm — only needed for the DL path):
+**Deep-learning backend** (adds torch, torchvision, timm - only needed for the DL path):
 
 ```bash
 pip install flask opencv-python numpy scikit-image pillow torch torchvision timm
@@ -79,11 +79,11 @@ CRACKMARK_BACKEND=classical python server.py
 python server.py
 ```
 
-**DL backend** — runs a compact U-Net (ResNet-18 encoder) through `/analyze`. Every saved correction fires `/finetune` in the background to update the model in place.
+**DL backend:** runs a compact U-Net (ResNet-18 encoder) through `/analyze`. Every saved correction fires `/finetune` in the background to update the model in place.
 
-**Classical backend** — the original OpenCV / scikit-image pipeline. Always available; no GPU or torch needed. Fine-tuning calls from the UI are accepted but return `{"skipped": "classical backend"}` without error.
+**Classical backend:** the original OpenCV / scikit-image pipeline. Always available; no GPU or torch needed. Fine-tuning calls from the UI are accepted but return `{"skipped": "classical backend"}` without error.
 
-**Automatic fallback** — if `torch` is missing or model construction fails, the server prints a warning and starts in classical mode automatically, so it always runs.
+**Automatic fallback:** if `torch` is missing or model construction fails, the server prints a warning and starts in classical mode automatically, so it always runs.
 
 ---
 
@@ -96,14 +96,14 @@ The default model (`DefaultCrackNet`) is a compact U-Net with a timm ResNet-18 e
 | Variable | Purpose | Default |
 | --- | --- | --- |
 | `CRACKMARK_MODEL` | Architecture name (registered in `model.py`) | `default` |
-| `CRACKMARK_CKPT` | Path to a checkpoint file (relative to repo root or absolute) | *(none — ImageNet init)* |
+| `CRACKMARK_CKPT` | Path to a checkpoint file (relative to repo root or absolute) | *(none, ImageNet init)* |
 | `CRACKMARK_PORT` | HTTP port | `5001` |
 
 The fine-tuned checkpoint is saved to `crackmark_finetuned.pt` next to `server.py` and is loaded automatically on the next restart (takes priority over `CRACKMARK_CKPT`).
 
 ### Use your own model
 
-**Option A — load your weights into the default architecture:**
+**Option A: load your weights into the default architecture:**
 
 ```bash
 CRACKMARK_CKPT=path/to/your_weights.pt python server.py
@@ -111,7 +111,7 @@ CRACKMARK_CKPT=path/to/your_weights.pt python server.py
 
 The loader handles both plain `state_dict` files and PyTorch Lightning checkpoints (strips leading `model.` prefix, drops non-matching keys like `criterion.*`). It prints which keys loaded and which were skipped so you can verify the match.
 
-**Option B — bring your own architecture:**
+**Option B: bring your own architecture:**
 
 1. Add your class to `model.py` (its `forward` must return `[B, 2, H, W]` logits):
 
@@ -124,7 +124,7 @@ class MyCrackNet(nn.Module):
 MODEL_REGISTRY['mynet'] = MyCrackNet
 ```
 
-1. Select it and point to a checkpoint — no other code edits needed:
+1. Select it and point to a checkpoint, no other code edits needed:
 
 ```bash
 CRACKMARK_MODEL=mynet CRACKMARK_CKPT=mynet_weights.pt python server.py

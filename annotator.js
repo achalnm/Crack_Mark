@@ -102,7 +102,7 @@ fi.addEventListener('change', e => {
     ? sorted[0].webkitRelativePath.split('/')[0]
     : 'Selected Folder';
 
-  srcStatus.textContent = `${sorted.length} image${sorted.length !== 1 ? 's' : ''} — ${folderName}`;
+  srcStatus.textContent = `${sorted.length} image${sorted.length !== 1 ? 's' : ''} (${folderName})`;
   srcStatus.classList.add('ok');
   impSrcStep.classList.add('done');
   btnStart.disabled = false;
@@ -139,7 +139,7 @@ btnStart.addEventListener('click', () => {
   ldCount.textContent  = `${images.length} image${images.length !== 1 ? 's' : ''} loaded`;
   ldFolder.textContent = folderName;
 
-  if (!outDirHandle) toast('No output folder — masks will download to browser', 'err', 5000);
+  if (!outDirHandle) toast('No output folder - masks will download to browser', 'err', 5000);
   showScreen(sLoaded);
   setTimeout(startEditor, 1400);
 });
@@ -171,7 +171,7 @@ function loadImage() {
   hdrFile.textContent = file.name;
   hdrFile.title       = file.name;
   updateHeader();
-  setMLChip('—', '');
+  setMLChip('-', '');
 
   if (objectURL) URL.revokeObjectURL(objectURL);
   objectURL = URL.createObjectURL(file);
@@ -511,7 +511,7 @@ btnRmAI.addEventListener('click', () => {
   mlBinary = null;
   setMLChip('AI cleared', '');
   renderMaskFull();
-  toast('AI detections removed — draw manually on either side', 'ok', 4000);
+  toast('AI detections removed - draw manually on either side', 'ok', 4000);
 });
 
 function setMLChip(text, state) {
@@ -551,7 +551,7 @@ async function fetchML(file) {
     if (e.name === 'AbortError') return;
     mlBinary = null;
     setMLChip('No server', 'err');
-    toast('server.py not running — draw manually', 'err', 5000);
+    toast('server.py not running - draw manually', 'err', 5000);
   }
 }
 
@@ -750,9 +750,9 @@ async function submitFinetune(file, maskCanvas) {
 
     const data = await res.json();
     if (data.skipped) {
-      toast('Saved (classical backend — no learning)', 'ok', 3000);
+      toast('Saved (classical mode)', 'ok', 3000);
     } else {
-      toast('Model updated from correction — loss: ' + data.loss.toFixed(4), 'ok', 5000);
+      toast('Fine-tuned - loss: ' + data.loss.toFixed(4), 'ok', 5000);
     }
   } catch (e) {
     toast('Fine-tune error: ' + e.message, 'err', 4000);
