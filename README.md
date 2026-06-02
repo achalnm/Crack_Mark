@@ -2,6 +2,8 @@
 
 A road crack detection and annotation tool. You load a folder of road surface photographs, the tool automatically detects cracks in each image and generates a binary mask, and you can then manually refine that mask before saving it. Designed for building labeled datasets for pavement analysis and road condition monitoring.
 
+It also ships with an optional deep-learning backend: a U-Net that runs inference through the same interface and gets fine-tuned on every mask you save, so the detector gradually improves as you annotate.
+
 ---
 
 ## Screenshots
@@ -21,26 +23,114 @@ A road crack detection and annotation tool. You load a folder of road surface ph
 - Python 3.8 or newer
 - Google Chrome or Microsoft Edge (required for the native folder save feature)
 
-Install the Python dependencies with:
+**Classical backend only** (original five packages):
 
 ```bash
 pip install flask opencv-python numpy scikit-image pillow
 ```
+
+**Deep-learning backend** (adds torch, torchvision, timm — only needed for the DL path):
+
+```bash
+pip install flask opencv-python numpy scikit-image pillow torch torchvision timm
+```
+
+Or install everything at once from the included file:
+
+```bash
+pip install -r requirements.txt
+```
+
+If `torch` is not installed the server falls back to the classical backend automatically.
 
 ---
 
 ## Getting Started
 
 1. Download or clone the repository
-2. Install the dependencies using the command above
+2. Install the dependencies (see Requirements above)
 3. Run the server with `python server.py`
-4. Open `http://localhost:5000` in Chrome or Edge
+4. Open `http://localhost:5001` in Chrome or Edge
 
-The terminal will print:
+The server runs on **port 5001** by default (macOS reserves port 5000 for AirPlay Receiver). Override with `CRACKMARK_PORT=8080 python server.py`.
+
+The terminal will print the active backend, device, and weights source:
 
 ```text
-  CrackMark - open http://localhost:5000 in Chrome
+  CrackMark  |  backend: DL  |  device: cpu  |  weights: ImageNet init (no crack checkpoint)
+  Open http://localhost:5001 in Chrome
 ```
+
+---
+
+## Backends
+
+CrackMark ships with two detection backends selectable via an environment variable.
+
+| Variable | Values | Default |
+| --- | --- | --- |
+| `CRACKMARK_BACKEND` | `dl` or `classical` | `dl` |
+
+```bash
+# Force classical (no torch required)
+CRACKMARK_BACKEND=classical python server.py
+
+# Deep-learning (default when torch is installed)
+python server.py
+```
+
+**DL backend** — runs a compact U-Net (ResNet-18 encoder) through `/analyze`. Every saved correction fires `/finetune` in the background to update the model in place.
+
+**Classical backend** — the original OpenCV / scikit-image pipeline. Always available; no GPU or torch needed. Fine-tuning calls from the UI are accepted but return `{"skipped": "classical backend"}` without error.
+
+**Automatic fallback** — if `torch` is missing or model construction fails, the server prints a warning and starts in classical mode automatically, so it always runs.
+
+---
+
+## Model
+
+The default model (`DefaultCrackNet`) is a compact U-Net with a timm ResNet-18 encoder initialized from ImageNet weights. It will produce rough masks on new data until either fine-tuned through annotation or replaced with a properly trained crack checkpoint.
+
+### Environment variables
+
+| Variable | Purpose | Default |
+| --- | --- | --- |
+| `CRACKMARK_MODEL` | Architecture name (registered in `model.py`) | `default` |
+| `CRACKMARK_CKPT` | Path to a checkpoint file (relative to repo root or absolute) | *(none — ImageNet init)* |
+| `CRACKMARK_PORT` | HTTP port | `5001` |
+
+The fine-tuned checkpoint is saved to `crackmark_finetuned.pt` next to `server.py` and is loaded automatically on the next restart (takes priority over `CRACKMARK_CKPT`).
+
+### Use your own model
+
+**Option A — load your weights into the default architecture:**
+
+```bash
+CRACKMARK_CKPT=path/to/your_weights.pt python server.py
+```
+
+The loader handles both plain `state_dict` files and PyTorch Lightning checkpoints (strips leading `model.` prefix, drops non-matching keys like `criterion.*`). It prints which keys loaded and which were skipped so you can verify the match.
+
+**Option B — bring your own architecture:**
+
+1. Add your class to `model.py` (its `forward` must return `[B, 2, H, W]` logits):
+
+```python
+# model.py
+class MyCrackNet(nn.Module):
+    def forward(self, x):   # x: [B, 3, 512, 512] ImageNet-normalized
+        ...                 # returns [B, 2, H, W] (ch0=bg, ch1=crack)
+
+MODEL_REGISTRY['mynet'] = MyCrackNet
+```
+
+1. Select it and point to a checkpoint — no other code edits needed:
+
+```bash
+CRACKMARK_MODEL=mynet CRACKMARK_CKPT=mynet_weights.pt python server.py
+```
+
+Optionally implement `encoder_params()` and `decoder_params()` (each returning an iterable of parameters) so fine-tuning uses a lower learning rate on the encoder than the decoder. If absent, all parameters are trained at one rate.
 
 ---
 
@@ -217,7 +307,9 @@ The sensitivity slider in the UI controls the high threshold multiplier in step 
 
 | Layer | Technology |
 | --- | --- |
-| Detection server | Python, Flask, OpenCV, scikit-image, NumPy |
+| Server | Python, Flask |
+| Classical detection | OpenCV, scikit-image, NumPy |
+| DL detection | PyTorch, torchvision, timm (ResNet-18 U-Net) |
 | Frontend | Vanilla JavaScript, HTML5 Canvas, CSS |
 | Image decoding | OpenCV with Pillow fallback |
 | Save to disk | File System Access API with download fallback |

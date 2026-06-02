@@ -1,0 +1,6 @@
+__pycache__/
+*.py[cod]
+crackmark_finetuned.pt
+*.ckpt
+*.pt
+.DS_Store

@@ -662,6 +662,9 @@ async function doSave() {
 
   if (!ok) return;
   savedCount++;
+  const fileForTrain = currentFileObj;
+  const maskForTrain = buildFinalMask();
+  submitFinetune(fileForTrain, maskForTrain);
   advance();
 }
 
@@ -733,6 +736,28 @@ document.addEventListener('keydown', e => {
 });
 
 kbdToggle.addEventListener('click', () => kbdBox.classList.toggle('visible'));
+
+async function submitFinetune(file, maskCanvas) {
+  try {
+    const maskBlob = await new Promise(res => maskCanvas.toBlob(res, 'image/png'));
+    const form = new FormData();
+    form.append('image', file);
+    form.append('mask', maskBlob, 'mask.png');
+    form.append('steps', '5');
+
+    const res = await fetch('/finetune', { method: 'POST', body: form });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+
+    const data = await res.json();
+    if (data.skipped) {
+      toast('Saved (classical backend — no learning)', 'ok', 3000);
+    } else {
+      toast('Model updated from correction — loss: ' + data.loss.toFixed(4), 'ok', 5000);
+    }
+  } catch (e) {
+    toast('Fine-tune error: ' + e.message, 'err', 4000);
+  }
+}
 
 function toast(message, type = '', duration = 3500) {
   const el = document.createElement('div');

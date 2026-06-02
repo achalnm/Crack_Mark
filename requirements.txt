@@ -1,0 +1,8 @@
+flask
+opencv-python
+numpy
+scikit-image
+pillow
+torch
+torchvision
+timm
