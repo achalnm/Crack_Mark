@@ -11,7 +11,7 @@ from crack_segment import remove_illumination, gaussian_tophat, shape_filter
 from skimage.morphology import remove_small_holes, closing, disk
 from skimage.filters import apply_hysteresis_threshold
 
-BACKEND    = os.environ.get('CRACKMARK_BACKEND', 'dl').lower()
+BACKEND    = os.environ.get('CRACKMARK_BACKEND', 'classical').lower()
 MODEL_NAME = os.environ.get('CRACKMARK_MODEL',   'default')
 CKPT_ENV   = os.environ.get('CRACKMARK_CKPT',    '')
 PORT       = int(os.environ.get('CRACKMARK_PORT', 5001))

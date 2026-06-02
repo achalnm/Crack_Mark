@@ -2,7 +2,7 @@
 
 A road crack detection and annotation tool. You load a folder of road surface photographs, the tool automatically detects cracks in each image and generates a binary mask, and you can then manually refine that mask before saving it. Designed for building labeled datasets for pavement analysis and road condition monitoring.
 
-It also ships with an optional deep-learning backend: a U-Net that runs inference through the same interface and gets fine-tuned on every mask you save, so the detector gradually improves as you annotate.
+It also ships with an optional deep-learning backend: a U-Net with a ResNet-18 encoder that runs through the same interface. It starts from ImageNet weights rather than a crack-trained checkpoint, so its masks are rough until you fine-tune it or load your own weights. Every mask you save updates it in place, so it adapts to your data as you annotate. For dependable detection out of the box, the classical backend is the one to use.
 
 ---
 
@@ -57,7 +57,7 @@ The server runs on **port 5001** by default (macOS reserves port 5000 for AirPla
 The terminal will print the active backend, device, and weights source:
 
 ```text
-  CrackMark  |  backend: DL  |  device: cpu  |  weights: ImageNet init (no crack checkpoint)
+  CrackMark  |  backend: classical
   Open http://localhost:5001 in Chrome
 ```
 
@@ -69,14 +69,14 @@ CrackMark ships with two detection backends selectable via an environment variab
 
 | Variable | Values | Default |
 | --- | --- | --- |
-| `CRACKMARK_BACKEND` | `dl` or `classical` | `dl` |
+| `CRACKMARK_BACKEND` | `dl` or `classical` | `classical` |
 
 ```bash
-# Force classical (no torch required)
-CRACKMARK_BACKEND=classical python server.py
-
-# Deep-learning (default when torch is installed)
+# Classical (default - works immediately, no GPU needed)
 python server.py
+
+# Deep-learning (bring a checkpoint or expect rough masks until fine-tuned)
+CRACKMARK_BACKEND=dl python server.py
 ```
 
 **DL backend:** runs a compact U-Net (ResNet-18 encoder) through `/analyze`. Every saved correction fires `/finetune` in the background to update the model in place.
@@ -183,7 +183,7 @@ The small pill in the header bar shows the current state of the automatic detect
 | Status | Meaning |
 | --- | --- |
 | Analyzing... | Detection is running on the current image |
-| AI Ready | Detection finished, mask is showing |
+| AI Ready | Detection finished, mask is showing (quality depends on the loaded model) |
 | No server | `server.py` is not running, work manually |
 | AI cleared | You removed the auto detection for this image |
 
